@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Army Simulation</title>
+    <!-- <link rel="stylesheet" href="style.css" -->
+</head>
+<style>
+.button {
+  padding: 15px 25px;
+  font-size: 24px;
+  text-align: center;
+  cursor: pointer;
+  outline: none;
+  color: #fff;
+  background-color: #4CAF50;
+  border: none;
+  border-radius: 15px;
+  box-shadow: 0 9px #999;
+}
+
+.button:hover {background-color: #3e8e41}
+
+.button:active {
+  background-color: #3e8e41;
+  box-shadow: 0 5px #666;
+  transform: translateY(4px);
+}
+
+#buttonholder {
+  margin: 20px;
+}
+</style>
+<body style=" background: lightblue;">
+  <div id="buttonholder">
+    <button class="button" onclick="zoomout()">-</button>
+    <button class="button" onclick="zoomin()">+</button>
+    <button class="button" onclick="change_frame('left')">&lt</button>
+    <button class="button" onclick="change_frame('right')">&gt</button>
+    <button class="button" onclick="play()">Play</button>
+    <button class="button" onclick="stop()">Stop</button>
+    <button class="button" onclick="reset('left')">Reset</button>
+
+    <input type="range" id="frame_replay" min="0" max="10" value="0" oninput="showFrame(this.value)" onchange="showFrame(this.value)">
+  </div>
+  <div id="canvas-holder" width="2000px" height="2000px" style= "overflow:scroll"; >
+    <canvas id="canvas" width="2000px" height="2000px" style="background: #fff; overflow:scroll;"></canvas>
+  </div>
+<script>
+    var ws = new WebSocket("ws://localhost:8000/websocket");
+    var curr = 0;
+    var scale = 1;
+    var maps = [[]];
+    var playing = false;
+
+    function drawBoard(scale) {
+      map = maps[curr]
+      var p = 5;
+      var bw = map[0].length;
+      var bh = map.length;
+      var padding = 10;
+
+      var canvas = document.getElementById("canvas");
+      // canvas.displayWidth  = (bw*100*p*scale).toString() + "px";
+      // canvas.displayHeight = (bh*100*p*scale).toString() + "px";
+      // canvas.width = "2000px";
+      // canvas.height = "2000px";
+      console.log("displayWidth",canvas.displayWidth)
+      console.log("displayHeight",canvas.displayHeight)
+      var context = canvas.getContext("2d");
+      // context.canvas.width = "20000px";
+      // context.canvas.height = "20000px";
+      context.clearRect(0, 0, context.canvas.width, context.canvas.height);
+      context.beginPath();
+      context.setTransform(scale, 0, 0, scale, 0, 0);
+      for (var y = 0; y < bh; y += 1) {
+        for (var x = 0; x < bw; x += 1) {
+          context.moveTo(padding + x*p,padding + y*p);
+          context.lineTo(padding + x*p + p,padding + y*p);
+          context.lineTo(padding + x*p + p,padding + y*p + p)
+          context.lineTo(padding + x*p, padding + y*p + p)
+          context.lineTo(padding + x*p,padding + y*p);
+          if (map[y][x] == 1) {
+            context.fillStyle = "red";
+            context.fillRect(padding + x*p,padding + y*p,p,p);
+            context.moveTo(padding + x*p + p,padding + y*p + p/2);
+            context.lineTo(padding + x*p + p/2,padding + y*p + p/2)
+          }
+          if (map[y][x] == 0) {
+            context.fillStyle = "#d6f8d2";
+            context.fillRect(padding + x*p,padding + y*p,p,p);          
+          }
+        }
+      }
+      context.strokeStyle = "black";
+      context.stroke();
+    };
+
+    function showFrame(value) {
+      curr = value;
+      drawBoard(scale);
+    }
+
+    function setSlider() {
+      document.getElementById("frame_replay").value = curr;
+    }
+
+    function play() {
+      curr++;
+      change_frame('right');
+      if (curr < maps.length - 1) {
+        timer = setTimeout(play,75);
+      }
+    }
+
+    function stop() {
+      if (timer) {
+        clearInterval( timer );
+        timer=null;
+      }
+    }
+
+    function change_frame(direction) {
+      if (direction === 'left' && curr > 0) {
+        curr--;
+        setSlider();
+        drawBoard(scale);
+      }
+      if (direction === 'right' && curr < maps.length - 1) {
+        curr++;
+        setSlider();
+        drawBoard(scale);
+      }
+    }
+
+    function reset(direction) {
+      if (direction === 'left') {
+        curr = 1;
+        change_frame(direction);
+      }
+      if (direction === 'right') {
+        curr = maps.length - 2;
+        change_frame(direction);
+      }
+    }
+
+    function zoomin() {
+      if (scale < 4) {
+        scale++;
+        drawBoard(scale);
+      }
+    };
+
+    function zoomout() {
+      if (scale > 1) {
+        scale--;
+        drawBoard(scale);
+      }
+    };
+
+    function sendMessage() {
+        var messageInput = document.getElementById("message");
+        var message = messageInput.value;
+        var payload = {
+            "message": message,
+            "user": username
+        }
+        // Make the request to the WebSocket.
+        ws.send(JSON.stringify(payload));
+        // Clear the message from the input.
+        messageInput.value = "";
+        return false;
+    };
+
+    ws.onmessage = function(evt) {
+        var messageDict = JSON.parse(evt.data);
+        console.log(messageDict);
+        maps = messageDict.message;
+        document.getElementById("frame_replay").max = parseInt(maps.length - 1)
+        drawBoard(1);
+
+    };
+</script>
+</body>
+</html>
