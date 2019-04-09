@@ -5,6 +5,37 @@
     <!-- <link rel="stylesheet" href="style.css" -->
 </head>
 <style>
+#master-holder {
+  width:100%;
+  height: 100%;
+}
+#canvas-holder {
+  float: left;
+  width: 800px;
+  height: 800px;
+  overflow: scroll;
+  display:inline-block;
+}
+#tablediv {
+  display:inline-block;
+}
+
+table {
+  font-family: arial, sans-serif;
+  border-collapse: collapse;
+  width: 100%;
+}
+
+td, th {
+  border: 1px solid #dddddd;
+  text-align: left;
+  padding: 8px;
+}
+
+tr:nth-child(even) {
+  background-color: #dddddd;
+}
+
 .button {
   padding: 15px 25px;
   font-size: 24px;
@@ -36,14 +67,55 @@
     <button class="button" onclick="zoomin()">+</button>
     <button class="button" onclick="change_frame('left')">&lt</button>
     <button class="button" onclick="change_frame('right')">&gt</button>
-    <button class="button" onclick="play()">Play</button>
+    <button class="button" onclick="pressPlay()">Play</button>
     <button class="button" onclick="stop()">Stop</button>
     <button class="button" onclick="reset('left')">Reset</button>
 
     <input type="range" id="frame_replay" min="0" max="10" value="0" oninput="showFrame(this.value)" onchange="showFrame(this.value)">
   </div>
-  <div id="canvas-holder" width="2000px" height="2000px" style= "overflow:scroll"; >
-    <canvas id="canvas" width="2000px" height="2000px" style="background: #fff; overflow:scroll;"></canvas>
+  <div id="master-holder">
+    <div id="canvas-holder">
+      <canvas id="canvas"></canvas>
+    </div>
+    <div id="tablediv">
+      <table>
+      <tr>
+        <th>Company</th>
+        <th>Contact</th>
+        <th>Country</th>
+      </tr>
+      <tr>
+        <td>Alfreds Futterkiste</td>
+        <td>Maria Anders</td>
+        <td>Germany</td>
+      </tr>
+      <tr>
+        <td>Centro comercial Moctezuma</td>
+        <td>Francisco Chang</td>
+        <td>Mexico</td>
+      </tr>
+      <tr>
+        <td>Ernst Handel</td>
+        <td>Roland Mendel</td>
+        <td>Austria</td>
+      </tr>
+      <tr>
+        <td>Island Trading</td>
+        <td>Helen Bennett</td>
+        <td>UK</td>
+      </tr>
+      <tr>
+        <td>Laughing Bacchus Winecellars</td>
+        <td>Yoshi Tannamuri</td>
+        <td>Canada</td>
+      </tr>
+      <tr>
+        <td>Magazzini Alimentari Riuniti</td>
+        <td>Giovanni Rovelli</td>
+        <td>Italy</td>
+      </tr>
+    </table>
+    </div>
   </div>
 <script>
     var ws = new WebSocket("ws://localhost:8000/websocket");
@@ -54,7 +126,7 @@
     var playing = false;
     var num_teams = 1;
     var colors = ["red","blue","green","orange"];
-    
+
     function drawBoard(scale) {
       map = maps[curr]
       var p = 5;
@@ -63,6 +135,7 @@
       var padding = 10;
 
       var canvas = document.getElementById("canvas");
+      // canvas.innerHTML = "";
       // canvas.displayWidth  = (bw*100*p*scale).toString() + "px";
       // canvas.displayHeight = (bh*100*p*scale).toString() + "px";
       // canvas.width = "2000px";
@@ -70,11 +143,11 @@
       // console.log("displayWidth",canvas.displayWidth)
       // console.log("displayHeight",canvas.displayHeight)
       var context = canvas.getContext("2d");
-      // context.canvas.width = "20000px";
-      // context.canvas.height = "20000px";
+      context.canvas.width = (padding + bw*p)*scale;
+      context.canvas.height = (padding + bh*p)*scale;
+      context.setTransform(scale, 0, 0, scale, 0, 0);
       context.clearRect(0, 0, context.canvas.width, context.canvas.height);
       context.beginPath();
-      context.setTransform(scale, 0, 0, scale, 0, 0);
       context.moveTo(padding,padding);
       context.lineTo(padding+(bw*p),padding);
       context.lineTo(padding+(bw*p),padding + bh*p);
@@ -113,6 +186,12 @@
       document.getElementById("frame_replay").value = curr;
     }
 
+    function pressPlay() {
+      if (playing == false) {
+        playing = true;
+        play();
+      }
+    }
     function play() {
       if (curr >= maps.length - 1) {
         curr = -1;
@@ -124,6 +203,7 @@
     }
 
     function stop() {
+      playing = false;
       if (timer) {
         clearInterval( timer );
         timer=null;
@@ -131,16 +211,16 @@
     }
 
     function change_frame(direction) {
-      if (direction === 'left' && curr > 0) {
-        curr--;
-        setSlider();
-        drawBoard(scale);
-      }
-      if (direction === 'right' && curr < maps.length - 1) {
-        curr++;
-        setSlider();
-        drawBoard(scale);
-      }
+        if (direction === 'left' && curr > 0) {
+          curr--;
+          setSlider();
+          drawBoard(scale);
+        }
+        if (direction === 'right' && curr < maps.length - 1) {
+          curr++;
+          setSlider();
+          drawBoard(scale);
+        }
     }
 
     function reset(direction) {
@@ -156,6 +236,9 @@
 
     function zoomin() {
       if (scale < 4) {
+        // var canvas = document.getElementById("canvas");
+        // canvas.width = canvas.width * 1.5;
+        // canvas.height = canvas.height * 1.5;
         scale = scale + 0.5;
         drawBoard(scale);
       }
@@ -163,29 +246,41 @@
 
     function zoomout() {
       if (scale > 1) {
+        // var canvas = document.getElementById("canvas");
+        // canvas.width = canvas.width * 0.5;
+        // canvas.height = canvas.height * 0.5;
         scale = scale - 0.5;
         drawBoard(scale);
       }
     };
 
-    function sendMessage(message) {
+    function sendMessage(job,message) {
         var payload = {
-            "message": message,
+          "job": job,
+          "message": message,
         }
         // Make the request to the WebSocket.
         ws.send(JSON.stringify(payload));
     };
 
     ws.onmessage = function(evt) {
-      if (count > 0) {
-        var messageDict = JSON.parse(evt.data);
-        console.log("Building Grid...");
+      var messageDict = JSON.parse(evt.data);
+      if (messageDict.job == "setup") {
+        console.log("Setting up UI...");
+        console.log(messageDict.agents);
         maps = messageDict.frames;
         num_teams = messageDict.num_teams;
         document.getElementById("frame_replay").max = parseInt(maps.length - 1)
-        count++;
+        var canvas = document.getElementById("canvas");
+        // canvas.innerHTML = "Setting up UI...";
         drawBoard(1);
-        sendMessage("UI loaded successfully!");
+        sendMessage("tick","UI loaded successfully!");
+        count++;
+      }
+      if (messageDict.job == "tick") {
+        // console.log("tick " + parseInt(count));
+        sendMessage("tick","tick " + parseInt(count))
+        count++;
       }
 
     };

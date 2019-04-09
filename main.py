@@ -20,17 +20,23 @@ class SimpleWebSocket(tornado.websocket.WebSocketHandler):
         game = Game(150,num_agents=100,num_teams=3)
         frames = game.playEpisodes(200)
         print("Preparing UI...")
-        [client.write_message({"user":"MultiAgentArmy","frames":frames,"num_teams":game.getNumTeams()}) for client in self.connections]
+        messageDict = {"user":"MultiAgentArmy",
+                        "job":"setup","frames":frames,
+                        "num_teams":game.getNumTeams(), 
+                        "agents":game.serializeAgents()}
+        [client.write_message(messageDict) for client in self.connections]
 
     def on_message(self, message):
         message = ast.literal_eval(message)
-        print("{}".format(message["message"]))
-        if message["message"] == "load":
+        job = message["job"]
+        if job == "tick":
+            print("{}".format(message["message"]))
+        elif message["job"] == "send_data":
             [client.write_message({"user":"S","message":"None"}) for client in self.connections]
 
     @classmethod
     def send_message(cls):
-    	[client.write_message({"message":"tick"}) for client in cls.connections]
+    	[client.write_message({"job":"tick"}) for client in cls.connections]
 
     def on_close(self):
         self.connections.remove(self)
@@ -49,7 +55,8 @@ if __name__ == "__main__":
     app.listen(port)
     METER_CHECK_INTERVAL = 1000  # ms
     # periodic sending
-	tornado.ioloop.PeriodicCallback(SimpleWebSocket.send_message,METER_CHECK_INTERVAL).start()
+    tornado.ioloop.PeriodicCallback(SimpleWebSocket.send_message,METER_CHECK_INTERVAL).start()
     tornado.ioloop.IOLoop.instance().start()
   except (SystemExit, KeyboardInterrupt):
     print("Client closed")
+

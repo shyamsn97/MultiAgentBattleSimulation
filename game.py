@@ -18,6 +18,9 @@ class Game():
     #getters
     def getNumTeams(self):
         return self.num_teams
+
+    def getAgents(self):
+        return self.live_agents
     #processing
     def initialize(self):
         num_agents = self.agent_configs["num_agents"]
@@ -37,9 +40,10 @@ class Game():
     def play(self):
         for agentId in self.live_agents.keys():
             agent = self.live_agents[agentId]
-            actions = self.env.getMoves(agent)
-            action = agent.train_policy(actions)
-            self.env.step(agent,action)
+            if agent.isAlive():
+                actions = self.env.getMoves(agent)
+                action = agent.train_policy(actions)
+                self.env.step(agent,action)
 
         return self.env.encode(), self.env.__str__(), self.env.countAgents()
 
@@ -57,6 +61,14 @@ class Game():
         # else:
         #     animate(framestr)
         return frames
+
+    def serializeAgents(self):
+        serialized = {}
+        for agentId in self.live_agents.keys():
+            agent = self.live_agents[agentId]
+            serialized[agentId] = agent.serialize()
+        return serialized
+
 
     def printEnv(self):
         print(self.env)
