@@ -1,49 +1,36 @@
+import webbrowser, os
 import tornado.ioloop
 import tornado.web
 import tornado.websocket
 from tornado.options import define, options, parse_command_line
+import ast
 
 from game import Game
 
+port = 8000
 class MainHandler(tornado.web.RequestHandler):
     def get(self):
         self.render("index.html")
 
 class SimpleWebSocket(tornado.websocket.WebSocketHandler):
     connections = set()
-    a = [0,1,1,2,3,4]
+    a = [1,2,3]
     def open(self):
         self.connections.add(self)
-        game = Game(200,num_agents=5)
+        game = Game(150,num_agents=100,num_teams=3)
         frames = game.playEpisodes(200)
-       #  map = [
-       #   [ 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ],
-       #   [ 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ],
-       #   [ 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ],
-       #   [ 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ],
-       #   [ 1, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ],
-       #   [ 1, 0, 0, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ],
-       #   [ 1, 1, 1, 0, 1, 0, 0, 1, 1, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0 ],
-       #   [ 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 1, 1, 1, 0, 0, 0, 0, 0 ],
-       #   [ 0, 0, 1, 0, 1, 0, 0, 1, 1, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0 ],
-       #   [ 0, 0, 1, 0, 1, 0, 0, 1, 0, 0, 0, 1, 1, 1, 0, 0, 0, 0, 0 ],
-       #   [ 0, 0, 1, 1, 1, 0, 1, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0 ],
-       #   [ 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0 ],
-       #   [ 0, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0 ],
-       #   [ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ],
-       #   [ 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ],
-       #   [ 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 ],
-       # ]
-        [client.write_message({"user":"SS","message":frames}) for client in self.connections]
+        print("Preparing UI...")
+        [client.write_message({"user":"MultiAgentArmy","frames":frames,"num_teams":game.getNumTeams()}) for client in self.connections]
 
     def on_message(self, message):
-    	print("Received {}".format(message))
-    	[client.write_message({"user":"SS","message":"POOP"}) for client in self.connections]
+        message = ast.literal_eval(message)
+        print("{}".format(message["message"]))
+        if message["message"] == "load":
+            [client.write_message({"user":"S","message":"None"}) for client in self.connections]
 
     @classmethod
     def send_message(cls):
-    	[client.write_message({"user":"NO","message":cls.a}) for client in cls.connections]
-    	# cls.a += 1
+    	[client.write_message({"message":"tick"}) for client in cls.connections]
 
     def on_close(self):
         self.connections.remove(self)
@@ -55,13 +42,14 @@ def make_app():
     ])
 
 if __name__ == "__main__":
-	print("Starting Server...")
-	try:
-		app = make_app()
-		app.listen(8000)
-		METER_CHECK_INTERVAL = 1000  # ms
-		# tornado.ioloop.PeriodicCallback(SimpleWebSocket.send_message,METER_CHECK_INTERVAL).start()
-		tornado.ioloop.IOLoop.instance().start()
-
-	except (SystemExit, KeyboardInterrupt):
-		print("Client closed")
+  print("Starting Server... go to localhost:{}".format(port))
+  # webbrowser.open('file://' + os.path.realpath("index.html"))
+  try:
+    app = make_app()
+    app.listen(port)
+    METER_CHECK_INTERVAL = 1000  # ms
+    # periodic sending
+	tornado.ioloop.PeriodicCallback(SimpleWebSocket.send_message,METER_CHECK_INTERVAL).start()
+    tornado.ioloop.IOLoop.instance().start()
+  except (SystemExit, KeyboardInterrupt):
+    print("Client closed")

@@ -47,11 +47,14 @@
   </div>
 <script>
     var ws = new WebSocket("ws://localhost:8000/websocket");
+    var count = 0;
     var curr = 0;
     var scale = 1;
     var maps = [[]];
     var playing = false;
-
+    var num_teams = 1;
+    var colors = ["red","blue","green","orange"];
+    
     function drawBoard(scale) {
       map = maps[curr]
       var p = 5;
@@ -64,26 +67,32 @@
       // canvas.displayHeight = (bh*100*p*scale).toString() + "px";
       // canvas.width = "2000px";
       // canvas.height = "2000px";
-      console.log("displayWidth",canvas.displayWidth)
-      console.log("displayHeight",canvas.displayHeight)
+      // console.log("displayWidth",canvas.displayWidth)
+      // console.log("displayHeight",canvas.displayHeight)
       var context = canvas.getContext("2d");
       // context.canvas.width = "20000px";
       // context.canvas.height = "20000px";
       context.clearRect(0, 0, context.canvas.width, context.canvas.height);
       context.beginPath();
       context.setTransform(scale, 0, 0, scale, 0, 0);
+      context.moveTo(padding,padding);
+      context.lineTo(padding+(bw*p),padding);
+      context.lineTo(padding+(bw*p),padding + bh*p);
+      context.lineTo(padding,padding + bh*p);
+      context.lineTo(padding,padding);
       for (var y = 0; y < bh; y += 1) {
         for (var x = 0; x < bw; x += 1) {
-          context.moveTo(padding + x*p,padding + y*p);
-          context.lineTo(padding + x*p + p,padding + y*p);
-          context.lineTo(padding + x*p + p,padding + y*p + p)
-          context.lineTo(padding + x*p, padding + y*p + p)
-          context.lineTo(padding + x*p,padding + y*p);
-          if (map[y][x] == 1) {
-            context.fillStyle = "red";
+          // for grid
+          // context.moveTo(padding + x*p,padding + y*p);
+          // context.lineTo(padding + x*p + p,padding + y*p);
+          // context.lineTo(padding + x*p + p,padding + y*p + p)
+          // context.lineTo(padding + x*p, padding + y*p + p)
+          // context.lineTo(padding + x*p,padding + y*p);
+          if (map[y][x] > 0) {
+            context.fillStyle = colors[map[y][x]-1];
             context.fillRect(padding + x*p,padding + y*p,p,p);
-            context.moveTo(padding + x*p + p,padding + y*p + p/2);
-            context.lineTo(padding + x*p + p/2,padding + y*p + p/2)
+            // context.moveTo(padding + x*p + p,padding + y*p + p/2);
+            // context.lineTo(padding + x*p + p/2,padding + y*p + p/2)
           }
           if (map[y][x] == 0) {
             context.fillStyle = "#d6f8d2";
@@ -105,10 +114,12 @@
     }
 
     function play() {
-      curr++;
+      if (curr >= maps.length - 1) {
+        curr = -1;
+      }
       change_frame('right');
       if (curr < maps.length - 1) {
-        timer = setTimeout(play,75);
+        timer = setTimeout(play,10);
       }
     }
 
@@ -145,38 +156,37 @@
 
     function zoomin() {
       if (scale < 4) {
-        scale++;
+        scale = scale + 0.5;
         drawBoard(scale);
       }
     };
 
     function zoomout() {
       if (scale > 1) {
-        scale--;
+        scale = scale - 0.5;
         drawBoard(scale);
       }
     };
 
-    function sendMessage() {
-        var messageInput = document.getElementById("message");
-        var message = messageInput.value;
+    function sendMessage(message) {
         var payload = {
             "message": message,
-            "user": username
         }
         // Make the request to the WebSocket.
         ws.send(JSON.stringify(payload));
-        // Clear the message from the input.
-        messageInput.value = "";
-        return false;
     };
 
     ws.onmessage = function(evt) {
+      if (count > 0) {
         var messageDict = JSON.parse(evt.data);
-        console.log(messageDict);
-        maps = messageDict.message;
+        console.log("Building Grid...");
+        maps = messageDict.frames;
+        num_teams = messageDict.num_teams;
         document.getElementById("frame_replay").max = parseInt(maps.length - 1)
+        count++;
         drawBoard(1);
+        sendMessage("UI loaded successfully!");
+      }
 
     };
 </script>

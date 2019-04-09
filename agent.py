@@ -2,20 +2,60 @@ import numpy as np
 import random
 
 class Agent():
-    def __init__(self,coord,maxlife):
+    def __init__(self,agentId,coord,max_life,team,identity=0,viewrange=1,attackrange=1):
+        self.agentId = agentId
         self.position = coord
         self.estimator = None
-        self.life = maxlife
+        self.life = max_life
         self.reward = 0
         self.alive = True
+        self.team = team
+        self.identity = identity
+        self.viewrange = viewrange
+        self.attackrange = attackrange
         self.create_model()
     #getters
+    def getId(self):
+        return self.agentId
+
     def getPosition(self):
-        return getPosition
+        return self.position
+
+    def getEstimator(self):
+        return self.estimator
+
+    def getLife(self):
+        return self.life
+
+    def getReward(self):
+        return self.reward
+
+    def getAlive(self):
+        return self.alive
+
+    def getTeam(self):
+        return self.team
+
+    def getIdentity(self):
+        return self.identity
+
+    def getViewRange(self):
+        return self.viewrange
+
+    def getAttackRange(self):
+        return self.attackrange
+
     #setters
     def setPosition(self,coord):
         self.position = coord
 
+    def setViewRange(self,r):
+        self.viewrange = r
+
+    def setAttackRange(self,r):
+        self.attackrange = r
+
+    #processers
     def processDamage(self,damage):
         self.life -= damage
         self.reward -= damage
