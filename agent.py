@@ -84,3 +84,4 @@ class Agent():
         return {"agentId":self.agentId,"alive":self.alive,"team":self.team,"life":self.life,
                 "position":self.position,"identity":self.identity,
                 "viewrange":self.viewrange,"attackrange":self.attackrange,"reward":self.reward}
+

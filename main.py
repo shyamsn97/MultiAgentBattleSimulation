@@ -7,6 +7,7 @@ import ast
 
 from game import Game
 
+static_root = os.path.join(os.path.dirname(__file__), 'static')
 port = 8000
 class MainHandler(tornado.web.RequestHandler):
     def get(self):
@@ -43,6 +44,7 @@ class SimpleWebSocket(tornado.websocket.WebSocketHandler):
 
 def make_app():
     return tornado.web.Application([
+        (r'/static/(.*)', tornado.web.StaticFileHandler, {'path': static_root}),
         (r"/", MainHandler),
         (r"/websocket", SimpleWebSocket)
     ])

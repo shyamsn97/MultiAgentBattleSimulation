@@ -10,20 +10,8 @@ class Env():
     #getters
     def getBoard(self):
         return self.board
-    #processing
-    def step(self,agent,action):
-        originalPosition = agent.getPosition()
-        self.remove(originalPosition)
-        self.place(action,agent)
 
-    def countAgents(self):
-        c = 0
-        for i in range(len(self.board)):
-            for j in range(len(self.board[0])):
-                if self.board[i][j].getOccupied():
-                    c += 1
-        return c
-
+    #state and actions
     def getMoves(self,agent):
         originalPosition = agent.getPosition()
         viewrange = agent.getViewRange()
@@ -40,6 +28,19 @@ class Env():
                     if not self.getCell(coord).getOccupied():
                         valid.append(coord)
         return valid
+    #processing
+    def step(self,agent,action):
+        originalPosition = agent.getPosition()
+        self.remove(originalPosition)
+        self.place(action,agent)
+
+    def countAgents(self):
+        c = 0
+        for i in range(len(self.board)):
+            for j in range(len(self.board[0])):
+                if self.board[i][j].getOccupied():
+                    c += 1
+        return c
 
     def remove(self,coord):
         self.getCell(coord).remove()
