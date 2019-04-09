@@ -15,16 +15,25 @@ class MainHandler(tornado.web.RequestHandler):
 
 class SimpleWebSocket(tornado.websocket.WebSocketHandler):
     connections = set()
-    a = [1,2,3]
+    frames = []
+    agents = []
+    counts = []
+    num_teams = 0
     def open(self):
         self.connections.add(self)
-        game = Game(150,num_agents=100,num_teams=3)
-        frames = game.playEpisodes(200)
         print("Preparing UI...")
+        if len(self.frames) == 0:
+            game = Game(150,num_agents=400,num_teams=2)
+            frames, framestr, counts, agents = game.playEpisodes(200)
+            self.num_teams = game.getNumTeams()
+            self.frames = frames
+            self.agents = agents
+            self.counts = counts
         messageDict = {"user":"MultiAgentArmy",
-                        "job":"setup","frames":frames,
-                        "num_teams":game.getNumTeams(), 
-                        "agents":game.serializeAgents()}
+                        "job":"setup","frames":self.frames,
+                        "num_teams":self.num_teams, 
+                        "agents":self.agents,
+                        "counts":self.counts}
         [client.write_message(messageDict) for client in self.connections]
 
     def on_message(self, message):
@@ -51,7 +60,6 @@ def make_app():
 
 if __name__ == "__main__":
   print("Starting Server... go to localhost:{}".format(port))
-  # webbrowser.open('file://' + os.path.realpath("index.html"))
   try:
     app = make_app()
     app.listen(port)

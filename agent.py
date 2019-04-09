@@ -13,6 +13,7 @@ class Agent():
         self.identity = identity
         self.viewrange = viewrange
         self.attackrange = attackrange
+        self.damage = 100
         self.create_model()
     #getters
     def getId(self):
@@ -45,6 +46,9 @@ class Agent():
     def getAttackRange(self):
         return self.attackrange
 
+    def getDamage(self):
+        return self.damage
+
     #setters
     def setPosition(self,coord):
         self.position = coord
@@ -74,7 +78,7 @@ class Agent():
     def train_policy(self,actions):
         return self.random_policy(actions)
 
-    def makeAction(self,action):
+    def move(self,action):
         self.position = action
 
     def random_policy(self,actions):

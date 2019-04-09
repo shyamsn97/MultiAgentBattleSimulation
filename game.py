@@ -37,7 +37,7 @@ class Game():
                     self.env.place(coord,agent)
                     self.live_agents[agentId] = agent
 
-    def play(self):
+    def iter(self):
         for agentId in self.live_agents.keys():
             agent = self.live_agents[agentId]
             if agent.isAlive():
@@ -45,22 +45,26 @@ class Game():
                 action = agent.train_policy(actions)
                 self.env.step(agent,action)
 
-        return self.env.encode(), self.env.__str__(), self.env.countAgents()
+        return self.env.encode(), self.env.__str__(), self.env.countAgents(), self.serializeAgents()
 
     def playEpisodes(self,num_episodes,pyg=False):
-        frames = []
-        framestr = []
+        frames = [self.env.encode()]
+        framestr = [self.env.__str__()]
+        counts = [self.env.countAgents()]
+        agents = [self.serializeAgents()]
         bar = tqdm.tqdm(np.arange(num_episodes))
         for i in bar:
-            env, envstr, count = self.play()
-            frames.append(env)
+            encoded, envstr, count, serialized_agents = self.iter()
+            frames.append(encoded)
             framestr.append(envstr)
+            agents.append(serialized_agents)
+            counts.append(count)
             bar.set_description("Episode: {} with count {}".format(i,count))
         # if pyg:
         #     playGrid(frames)
         # else:
         #     animate(framestr)
-        return frames
+        return frames, framestr, counts, agents
 
     def serializeAgents(self):
         serialized = {}

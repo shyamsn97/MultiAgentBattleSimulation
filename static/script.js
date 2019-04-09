@@ -2,13 +2,14 @@
     var count = 0;
     var curr = 0;
     var scale = 1;
-    var maps = [[]];
+    var frames = [[]];
     var playing = false;
     var num_teams = 1;
     var colors = ["red","blue","green","orange"];
-
+    var agentarr = [[]]
+    var agent_counts = 0
     function drawBoard(scale) {
-      map = maps[curr]
+      map = frames[curr]
       var p = 5;
       var bw = map[0].length;
       var bh = map.length;
@@ -61,17 +62,17 @@
     }
 
     function pressPlay() {
-      if (playing == false || curr == maps.length - 1) {
+      if (playing == false || curr == frames.length - 1) {
         playing = true;
         play();
       }
     }
     function play() {
-      if (curr >= maps.length - 1) {
+      if (curr >= frames.length - 1) {
         curr = -1;
       }
       change_frame('right');
-      if (curr < maps.length - 1) {
+      if (curr < frames.length - 1) {
         timer = setTimeout(play,10);
       }
     }
@@ -90,20 +91,22 @@
           setSlider();
           drawBoard(scale);
         }
-        if (direction === 'right' && curr < maps.length - 1) {
+        if (direction === 'right' && curr < frames.length - 1) {
           curr++;
           setSlider();
           drawBoard(scale);
         }
+        changeCounts();
     }
 
     function reset(direction) {
+      stop()
       if (direction === 'left') {
         curr = 1;
         change_frame(direction);
       }
       if (direction === 'right') {
-        curr = maps.length - 2;
+        curr = frames.length - 2;
         change_frame(direction);
       }
     }
@@ -131,22 +134,31 @@
         ws.send(JSON.stringify(payload));
     };
 
+    function changeCounts() {
+      document.getElementById("stats_text").innerHTML = "Counts: " + parseInt(agent_counts[curr]);
+    }
+
+    function createTable() {
+      var table = document.getElementById("table");
+      var agentarr = agents[curr]
+    }
     ws.onmessage = function(evt) {
       var messageDict = JSON.parse(evt.data);
       if (messageDict.job == "setup") {
         console.log("Setting up UI...");
-        console.log(messageDict.agents);
-        maps = messageDict.frames;
+        console.log(messageDict.agents[0]);
+        agents = messageDict.agents;
+        frames = messageDict.frames;
         num_teams = messageDict.num_teams;
-        document.getElementById("frame_replay").max = parseInt(maps.length - 1)
+        agent_counts = messageDict.counts
+        document.getElementById("frame_replay").max = parseInt(frames.length - 1)
         var canvas = document.getElementById("canvas");
-        // canvas.innerHTML = "Setting up UI...";
         drawBoard(1);
+        changeCounts();
         sendMessage("tick","UI loaded successfully!");
         count++;
       }
       if (messageDict.job == "tick") {
-        // console.log("tick " + parseInt(count));
         sendMessage("tick","tick " + parseInt(count))
         count++;
       }
