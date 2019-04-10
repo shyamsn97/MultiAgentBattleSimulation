@@ -81,7 +81,7 @@ class Env():
         damage = agent.getDamage()
         attacked_node = self.getCell(coord)
         attacked_agent = attacked_node.getAgent()
-        if attacked_agent.processDamage(damage) == False:
+        if agent.deliverDamage(damage,attacked_agent) == False:
             attacked_node.remove()
 
     def getCell(self,coord):

@@ -60,6 +60,13 @@ class Agent():
         self.attackrange = r
 
     #processers
+    def deliverDamage(self,damage,target_agent):
+        self.reward += damage
+        alive = target_agent.processDamage(damage)
+        if alive == False:
+            self.reward += 50
+        return alive
+
     def processDamage(self,damage):
         self.life -= damage
         self.reward -= damage

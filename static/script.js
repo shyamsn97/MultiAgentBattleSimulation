@@ -6,8 +6,9 @@
     var playing = false;
     var num_teams = 1;
     var colors = ["red","blue","green","orange"];
-    var agentarr = [[]]
+    var agents = [[]]
     var agent_counts = 0
+
     function drawBoard(scale) {
       map = frames[curr]
       var p = 5;
@@ -97,6 +98,7 @@
           drawBoard(scale);
         }
         changeCounts();
+        createTable();
     }
 
     function reset(direction) {
@@ -138,15 +140,40 @@
       document.getElementById("stats_text").innerHTML = "Counts: " + parseInt(agent_counts[curr]);
     }
 
+    function createNewTableHeader(headerTitle){
+      const temp = document.createElement('th');
+      temp.appendChild(document.createTextNode(headerTitle));
+      return temp
+    }
+
+    function createHeader() {
+      var tableHeaders = ["AgentId","Reward"];
+      var tableheader = document.getElementById('table-header');
+      tableheader.innerHTML = "";
+      tableHeaders.forEach(header=>{
+        tableheader.appendChild(createNewTableHeader(header));   
+      })  
+    }
+
+    function createRow(table,agent) {
+      var row = table.insertRow(-1);
+      row.insertCell(0).innerHTML = agent.agentId;
+      row.insertCell(1).innerHTML = agent.reward;
+    }
+
     function createTable() {
       var table = document.getElementById("table");
-      var agentarr = agents[curr]
+      var agentObj = agents[curr];
+      var tableheader = document.getElementById("table-header");
+      createHeader(tableheader);
+      // for (var agent in agentObj) {
+      //   createRow(table,agentObj[agent]);
+      // }
     }
     ws.onmessage = function(evt) {
       var messageDict = JSON.parse(evt.data);
       if (messageDict.job == "setup") {
         console.log("Setting up UI...");
-        console.log(messageDict.agents[0]);
         agents = messageDict.agents;
         frames = messageDict.frames;
         num_teams = messageDict.num_teams;
@@ -155,6 +182,7 @@
         var canvas = document.getElementById("canvas");
         drawBoard(1);
         changeCounts();
+        createTable();
         sendMessage("tick","UI loaded successfully!");
         count++;
       }

@@ -30,7 +30,8 @@ class SimpleWebSocket(tornado.websocket.WebSocketHandler):
             self.agents = agents
             self.counts = counts
         messageDict = {"user":"MultiAgentArmy",
-                        "job":"setup","frames":self.frames,
+                        "job":"setup",
+                        "frames":self.frames,
                         "num_teams":self.num_teams, 
                         "agents":self.agents,
                         "counts":self.counts}
@@ -63,7 +64,7 @@ if __name__ == "__main__":
   try:
     app = make_app()
     app.listen(port)
-    METER_CHECK_INTERVAL = 1000  # ms
+    METER_CHECK_INTERVAL = 1000  #ms
     # periodic sending
     tornado.ioloop.PeriodicCallback(SimpleWebSocket.send_message,METER_CHECK_INTERVAL).start()
     tornado.ioloop.IOLoop.instance().start()
