@@ -17,24 +17,27 @@ class SimpleWebSocket(tornado.websocket.WebSocketHandler):
     connections = set()
     frames = []
     agents = []
-    counts = []
+    agent_counts = []
+    team_counts = []
     num_teams = 0
     def open(self):
         self.connections.add(self)
         print("Preparing UI...")
         if len(self.frames) == 0:
-            game = Game(150,num_agents=400,num_teams=2)
-            frames, framestr, counts, agents = game.playEpisodes(200)
+            game = Game(100,num_agents=590,num_teams=2)
+            frames, framestr, agent_counts,team_counts, agents = game.playEpisodes(50)
             self.num_teams = game.getNumTeams()
             self.frames = frames
             self.agents = agents
-            self.counts = counts
+            self.agent_counts = agent_counts
+            self.team_counts = team_counts
         messageDict = {"user":"MultiAgentArmy",
                         "job":"setup",
                         "frames":self.frames,
                         "num_teams":self.num_teams, 
                         "agents":self.agents,
-                        "counts":self.counts}
+                        "agent_counts":self.agent_counts,
+                        "team_counts":self.team_counts}
         [client.write_message(messageDict) for client in self.connections]
 
     def on_message(self, message):

@@ -1,11 +1,13 @@
 import numpy as np
 import random
+from models import TorchEstimator
+import torch
 
 class Agent():
-    def __init__(self,agentId,coord,max_life,team,identity=0,viewrange=1,attackrange=1):
+    def __init__(self,agentId,max_life,team,identity=0,viewrange=2,attackrange=1,moverange=2):
         self.agentId = agentId
-        self.position = coord
-        self.estimator = None
+        self.position = None
+        self.estimator = TorchEstimator(viewrange,moverange,attackrange)
         self.life = max_life
         self.reward = 0
         self.alive = True
@@ -13,6 +15,7 @@ class Agent():
         self.identity = identity
         self.viewrange = viewrange
         self.attackrange = attackrange
+        self.moverange = moverange
         self.damage = 100
         self.create_model()
     #getters
@@ -45,6 +48,9 @@ class Agent():
 
     def getAttackRange(self):
         return self.attackrange
+
+    def getMoveRange(self):
+        return self.moverange
 
     def getDamage(self):
         return self.damage
@@ -82,14 +88,26 @@ class Agent():
     def create_model(self):
         self.policy = self.random_policy
 
-    def train_policy(self,actions):
-        return self.random_policy(actions)
+    def generateActionSpace(self):
+        return np.zeros((1 + self.moverange*2)**2 + (1 + self.actionrange*2)**2)
+
+    def train_policy(self,state,actions):
+        with torch.no_grad():
+            actions = torch.tensor(actions).float()
+            state = torch.tensor(state).float()
+        probs = self.estimator(state,actions)
+        action_probs = probs.clone().detach().numpy().flatten()
+        return np.random.choice(action_probs.shape[0],p=action_probs)
+        # move_range = (1+self.moverange*2)**2
+        # acton_range = (1+self.attackrange*2)**2
+
+        # return self.random_policy(probs.clone().detach().numpy())
 
     def move(self,action):
         self.position = action
 
-    def random_policy(self,actions):
-        return random.choice(actions)
+    def random_policy(self,probs):
+        return random.choice(len(probs),p=probs)
 
     def serialize(self):
         return {"agentId":self.agentId,"alive":self.alive,"team":self.team,"life":self.life,

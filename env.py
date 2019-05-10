@@ -1,7 +1,6 @@
 import numpy as np
 
 from node import Node
-
 class Env():
     def __init__(self,size,viewrange):
         self.size = size
@@ -11,59 +10,103 @@ class Env():
     def getBoard(self):
         return self.board
 
-    #state and actions
-    def getMoves(self,agent):
-        originalPosition = agent.getPosition()
+    def getState(self,agent):
+        r,c = agent.getPosition()
         team = agent.getTeam()
         identity = agent.getIdentity()
         viewrange = agent.getViewRange()
-        attackrange = agent.getAttackRange()
-        moves = np.zeros((1 + viewrange*2,1 + viewrange*2))
-        actions = np.zeros((1 + attackrange*2,1 + attackrange*2))
-        #temporary, should be in matrix form, with a key to convert back
-        r = originalPosition[0]
-        c = originalPosition[1]
-        valid = []
+        state = np.zeros((3,1+viewrange*2,1+viewrange*2))
         for i in range(1 + viewrange*2):
             for j in range(1 + viewrange*2):
                 coord = (r + (i-1),c + (j-1))
                 if coord[0] >= 0 and coord[1] >= 0 and coord[0] < self.size and coord[1] < self.size:
                     #check if valid
                     node = self.getCell(coord)
-                    if not node.getOccupied():
-                        valid.append(("move",coord))
+                    if node.getOccupied():
+                        state[0][i][j] = 1
+                        agent = node.getAgent()
+                        if agent.getTeam() != team:
+                            state[2][i][j] = agent.getLife()
+                        else:
+                            state[1][i][j] = agent.getLife()
+        return state.flatten()
 
-        for i in range(1 + attackrange*2):
-            for j in range(1 + attackrange*2):
+    def getActions(self,agent):
+        r,c = agent.getPosition()
+        team = agent.getTeam()
+        identity = agent.getIdentity()
+        attackrange = 1 + agent.getAttackRange()*2
+        moverange = 1 + agent.getMoveRange()*2
+        moves = np.zeros((moverange,moverange))
+        actions = np.zeros((attackrange,attackrange))
+        coord_list = []
+        for i in range(moverange):
+            for j in range(moverange):
                 coord = (r + (i-1),c + (j-1))
+                if coord[0] == r and coord[1]:
+                    coord_list.append(("pass",coord))
+                    moves[i][j] = 1
+                else:
+                    coord_list.append(("move",coord))
+                    if coord[0] >= 0 and coord[1] >= 0 and coord[0] < self.size and coord[1] < self.size:
+                        #check if valid
+                        node = self.getCell(coord)
+                        if node.getOccupied() == False:
+                            moves[i][j] = 1
+
+        for i in range(attackrange):
+            for j in range(attackrange):
+                coord = (r + (i-1),c + (j-1))
+                coord_list.append(("attack",coord))
                 if coord[0] >= 0 and coord[1] >= 0 and coord[0] < self.size and coord[1] < self.size:
                     #check if valid
                     node = self.getCell(coord)
                     if node.getOccupied():
-                        agent = node.getAgent()
-                        if agent.getTeam() != team:
-                            valid.append(("attack",coord))
-        return valid
+                        attacked_agent = node.getAgent()
+                        if attacked_agent.getTeam() != team:
+                            actions[i][j] = 1
+        moves = moves.flatten()
+        actions = actions.flatten()
+        return np.concatenate((moves,actions)), coord_list
+
+
+
+    #state and actions
+    def getStatesActions(self,agent):
+        states = self.getState(agent)
+        moves, coord_list = self.getActions(agent)
+        return states, moves , coord_list
+    
     #processing
-    def step(self,agent,action):
-        newcoord = action[1]
-        if action[0] == "move":
-            self.move(newcoord,agent)
-        elif action[0] == "attack":
-            self.attack(newcoord,agent)
+    def step(self,agent,action,coord_list):
+        coord_action = coord_list[action]
+        if coord_action[0] == "move":
+            self.move(coord_action[1],agent)
+        elif coord_action[0] == "attack":
+            self.attack(coord_action[1],agent)
+        elif coord_action[0] == "pass":
+            pass
+        # newcoord = action[1]
+        # if action[0] == "move":
+        #     self.move(newcoord,agent)
+        # elif action[0] == "attack":
+        #     self.attack(newcoord,agent)
         # originalPosition = agent.getPosition()
         # self.remove(originalPosition)
         # self.place(action,agent)
 
-    def countAgents(self):
+    def countAgents(self,numTeams):
+        teamCount = [0]*numTeams
         c = 0
         for i in range(len(self.board)):
             for j in range(len(self.board[0])):
                 node = self.getCell((i,j))
                 if node.getOccupied():
-                    if node.getAgent().isAlive():
+                    agent = node.getAgent()
+                    if agent.isAlive():
                         c += 1
-        return c
+                        teamCount[agent.getTeam()] += 1
+        return c, teamCount
 
     def remove(self,coord):
         self.getCell(coord).remove()

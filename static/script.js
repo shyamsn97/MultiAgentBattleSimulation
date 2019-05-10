@@ -5,10 +5,10 @@
     var frames = [[]];
     var playing = false;
     var num_teams = 1;
-    var colors = ["red","blue","green","orange"];
+    var colors = ["blue","red","green","orange"];
     var agents = [[]]
     var agent_counts = 0
-
+    var teamHeaders = [];
     function drawBoard(scale) {
       map = frames[curr]
       var p = 5;
@@ -55,7 +55,10 @@
 
     function showFrame(value) {
       curr = value;
+      setSlider();
       drawBoard(scale);
+      changeCounts();
+      updateTeamRow();
     }
 
     function setSlider() {
@@ -72,6 +75,7 @@
       if (curr >= frames.length - 1) {
         curr = -1;
       }
+
       change_frame('right');
       if (curr < frames.length - 1) {
         timer = setTimeout(play,10);
@@ -98,7 +102,7 @@
           drawBoard(scale);
         }
         changeCounts();
-        createTable();
+        updateTeamRow();
     }
 
     function reset(direction) {
@@ -140,36 +144,42 @@
       document.getElementById("stats_text").innerHTML = "Counts: " + parseInt(agent_counts[curr]);
     }
 
-    function createNewTableHeader(headerTitle){
+    function createNewHeader(headerTitle) {
       const temp = document.createElement('th');
       temp.appendChild(document.createTextNode(headerTitle));
       return temp
     }
 
-    function createHeader() {
-      var tableHeaders = ["AgentId","Reward"];
-      var tableheader = document.getElementById('table-header');
+    function createHeader(tableheader,tableHeaders) {
       tableheader.innerHTML = "";
       tableHeaders.forEach(header=>{
-        tableheader.appendChild(createNewTableHeader(header));   
+        tableheader.appendChild(createNewHeader(header));   
       })  
     }
 
-    function createRow(table,agent) {
+    function createRow(table,values) {
       var row = table.insertRow(-1);
-      row.insertCell(0).innerHTML = agent.agentId;
-      row.insertCell(1).innerHTML = agent.reward;
+      for (var i = 0; i < values.length; i++) {
+        row.insertCell(i).innerHTML = values[i];
+      }
     }
 
-    function createTable() {
-      var table = document.getElementById("table");
-      var agentObj = agents[curr];
-      var tableheader = document.getElementById("table-header");
-      createHeader(tableheader);
-      // for (var agent in agentObj) {
-      //   createRow(table,agentObj[agent]);
-      // }
+    function createTeamTable() {
+      var table = document.getElementById("team-table");
+      var tableheader = document.getElementById("team-table-header");
+      createHeader(tableheader,teamHeaders);
+      createRow(table,team_counts[curr])
     }
+
+    function updateTeamRow() {
+      var table = document.getElementById("team-table");
+      var row = table.rows[table.rows.length - 1];
+      var team_count = team_counts[curr];
+      for (var i = 0; i < num_teams; i++) {
+        row.cells[i].innerHTML = team_count[i];
+      }
+    }
+
     ws.onmessage = function(evt) {
       var messageDict = JSON.parse(evt.data);
       if (messageDict.job == "setup") {
@@ -177,12 +187,17 @@
         agents = messageDict.agents;
         frames = messageDict.frames;
         num_teams = messageDict.num_teams;
-        agent_counts = messageDict.counts
+        agent_counts = messageDict.agent_counts;
+        team_counts = messageDict.team_counts;
+        var teamHeaders = [];
+        for (var i = 0; i < num_teams; i++) {
+          teamHeaders.push("Team " + parseInt(i))
+        }
         document.getElementById("frame_replay").max = parseInt(frames.length - 1)
         var canvas = document.getElementById("canvas");
         drawBoard(1);
         changeCounts();
-        createTable();
+        createTeamTable();
         sendMessage("tick","UI loaded successfully!");
         count++;
       }
@@ -191,3 +206,4 @@
         count++;
       }
     };
+
