@@ -1,4 +1,4 @@
-    var ws = new WebSocket("ws://localhost:8000/websocket");
+    var ws = new WebSocket("ws://localhost:8888/websocket");
     var count = 0;
     var curr = 0;
     var scale = 1;
@@ -182,6 +182,7 @@
 
     ws.onmessage = function(evt) {
       var messageDict = JSON.parse(evt.data);
+      console.log(messageDict);
       if (messageDict.job == "setup") {
         console.log("Setting up UI...");
         agents = messageDict.agents;

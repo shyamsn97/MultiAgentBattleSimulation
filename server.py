@@ -8,12 +8,14 @@ import ast
 from game import Game
 
 static_root = os.path.join(os.path.dirname(__file__), 'static')
-port = 8000
+#port = 8000
 class MainHandler(tornado.web.RequestHandler):
     def get(self):
         self.render("index.html")
 
 class SimpleWebSocket(tornado.websocket.WebSocketHandler):
+    def initialize(self,params):
+        self.params = params
     connections = set()
     frames = []
     agents = []
@@ -24,8 +26,10 @@ class SimpleWebSocket(tornado.websocket.WebSocketHandler):
         self.connections.add(self)
         print("Preparing UI...")
         if len(self.frames) == 0:
-            game = Game(100,num_agents=590,num_teams=2)
-            frames, framestr, agent_counts,team_counts, agents = game.playEpisodes(50)
+            game = Game(size = self.params["grid_size"],
+                        num_agents = self.params["num_agents"],
+                        num_teams = self.params["num_teams"])
+            frames, framestr, agent_counts,team_counts, agents = game.playEpisodes(self.params["num_episodes"])
             self.num_teams = game.getNumTeams()
             self.frames = frames
             self.agents = agents
@@ -50,23 +54,38 @@ class SimpleWebSocket(tornado.websocket.WebSocketHandler):
 
     @classmethod
     def send_message(cls):
-    	[client.write_message({"job":"tick"}) for client in cls.connections]
+        [client.write_message({"job":"tick"}) for client in cls.connections]
 
     def on_close(self):
         self.connections.remove(self)
 
-def make_app():
+def make_app(params):
     return tornado.web.Application([
         (r'/static/(.*)', tornado.web.StaticFileHandler, {'path': static_root}),
         (r"/", MainHandler),
-        (r"/websocket", SimpleWebSocket)
+        (r"/websocket", SimpleWebSocket, {'params':params})
     ])
 
+
+def start_server(port,grid_size,num_agents,num_teams,num_episodes):
+    print("Starting Server... go to localhost:{}".format(port))
+    params = {"grid_size":grid_size, "num_agents":num_agents,"num_teams":num_teams,"num_episodes":num_episodes}
+    try:
+        app = make_app(params)
+        app.listen(port)
+        METER_CHECK_INTERVAL = 1000  #ms
+        # periodic sending
+        tornado.ioloop.PeriodicCallback(SimpleWebSocket.send_message,METER_CHECK_INTERVAL).start()
+        tornado.ioloop.IOLoop.instance().start()
+    except (SystemExit, KeyboardInterrupt):
+        print("Client closed")
+
 if __name__ == "__main__":
-  print("Starting Server... go to localhost:{}".format(port))
+  print("Starting Server... go to localhost:{}".format(8888))
+  params = {"grid_size":100, "num_agents":200,"num_teams":2,"num_episodes":20}
   try:
-    app = make_app()
-    app.listen(port)
+    app = make_app(params)
+    app.listen(8888)
     METER_CHECK_INTERVAL = 1000  #ms
     # periodic sending
     tornado.ioloop.PeriodicCallback(SimpleWebSocket.send_message,METER_CHECK_INTERVAL).start()
