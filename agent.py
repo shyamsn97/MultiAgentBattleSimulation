@@ -81,9 +81,11 @@ class Agent():
             self.reward -= 100
         return self.alive
 
-    def update(self,coord,reward):
+    def updateLocation(self,coord):
         self.position = coord
-        self.reward += reward
+    # def update(self,coord,reward):
+    #     self.position = coord
+    #     self.reward += reward
 
     def create_model(self):
         self.policy = self.random_policy
@@ -91,12 +93,17 @@ class Agent():
     def generateActionSpace(self):
         return np.zeros((1 + self.moverange*2)**2 + (1 + self.actionrange*2)**2)
 
+    @staticmethod
+    def getValidProbabilites(values,actions):
+        v = values*actions
+        return v / np.sum(v,-1)
+
     def train_policy(self,state,actions):
         with torch.no_grad():
-            actions = torch.tensor(actions).float()
             state = torch.tensor(state).float()
-        probs = self.estimator(state,actions)
+        probs = self.estimator(state)
         action_probs = probs.clone().detach().numpy().flatten()
+        action_probs = self.getValidProbabilites(action_probs,actions)
         return np.random.choice(action_probs.shape[0],p=action_probs)
         # move_range = (1+self.moverange*2)**2
         # acton_range = (1+self.attackrange*2)**2

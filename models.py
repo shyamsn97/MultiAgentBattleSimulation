@@ -23,12 +23,10 @@ class TorchEstimator(torch.nn.Module):
         self.linear3 = create_linear_torch(16,move_range + attack_range,relu=False)
         self.softmax = torch.nn.Softmax(dim=-1)
 
-    def forward(self,x,actions):
+    def forward(self,x):
         x = self.linear(x)
         x = self.linear2(x)
         x = self.linear3(x)
         # print(x.size())
         x = self.softmax(x)
-        x = x*actions
-        x = x / x.sum(0)
         return x

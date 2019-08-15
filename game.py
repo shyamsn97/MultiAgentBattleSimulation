@@ -9,7 +9,7 @@ from tools import *
 class Game():
     def __init__(self,size,num_agents=1,max_life=100,num_teams=2,configs=None,viewrange=1):
         self.size = size
-        self.env = Env(size,viewrange)
+        self.env = Env(size,viewrange,num_teams)
         self.agent_configs = {"num_agents":num_agents,"max_life":max_life,"viewrange":viewrange}
         self.live_agents = {}
         self.num_teams = num_teams
@@ -37,16 +37,7 @@ class Game():
                 self.live_agents[agentId] = agent
 
     def initialize(self):
-        l = list(self.live_agents.keys())
-        random.shuffle(l)
-        c = 0
-        while c < len(l):
-            agent = self.live_agents[l[c]]
-            team = agent.getTeam()
-            coord = (np.random.choice(self.size),int(np.random.uniform((team)*((self.size)//self.num_teams),(team+1)*(self.size//self.num_teams))))
-            if not self.env.getCell(coord).getOccupied():
-                self.env.place(coord,agent)
-                c += 1
+        self.env.initialize(self.live_agents)
 
     def iter(self):
         l = list(self.live_agents.keys())
