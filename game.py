@@ -7,22 +7,24 @@ from agent import Agent
 from tools import *
 
 class Game():
-    def __init__(self,size,num_agents=1,max_life=100,num_teams=2,configs=None,viewrange=1):
+    def __init__(self,size,num_agents=1,max_life=100,viewrange=2,num_teams=2,
+                num_episodes=20,episode_length=200,configs=None):
         self.size = size
-        self.env = Env(size,viewrange,num_teams)
+        self.env = Env(size,num_teams)
         self.agent_configs = {"num_agents":num_agents,"max_life":max_life,"viewrange":viewrange}
-        self.live_agents = {}
+        self.agent_dict = {}
         self.num_teams = num_teams
+        self.num_episodes = num_episodes
+        self.episode_length = episode_length
         if configs == None:
             self.createAgents()
-            self.initialize()
 
     #getters
     def getNumTeams(self):
         return self.num_teams
 
     def getAgents(self):
-        return self.live_agents
+        return self.agent_dict
     #processing
     def createAgents(self):
         num_agents = self.agent_configs["num_agents"]
@@ -34,16 +36,16 @@ class Game():
                 agentId = "T{}Agent{}".format(team,c)
                 c += 1
                 agent = Agent(agentId,max_life,team,viewrange=viewrange)
-                self.live_agents[agentId] = agent
+                self.agent_dict[agentId] = agent
 
     def initialize(self):
-        self.env.initialize(self.live_agents)
+        self.env.initialize(self.agent_dict)
 
     def iter(self):
-        l = list(self.live_agents.keys())
-        random.shuffle(l)
+        l = list(self.agent_dict.keys())
+        random.shuffle(l) #shuffle agent order
         for agentId in l:
-            agent = self.live_agents[agentId]
+            agent = self.agent_dict[agentId]
             if agent.isAlive():
                 states, actions, coord_list = self.env.getStatesActions(agent)
                 action = agent.train_policy(states,actions)
@@ -51,21 +53,24 @@ class Game():
         agent_count, team_count = self.env.countAgents(self.num_teams)
         return self.env.encode(), self.env.__str__(),agent_count, team_count, self.serializeAgents()
 
-    def playEpisodes(self,num_episodes,pyg=False):
-        frames = [self.env.encode()]
-        framestr = [self.env.__str__()]
+    def playEpisodes(self,pyg=False):
+        frames = []
+        framestr = []
         agent_counts = [self.env.countAgents(self.num_teams)]
         agents = [self.serializeAgents()]
         team_counts = [[self.agent_configs["num_agents"]]*self.num_teams]
-        bar = tqdm.tqdm(np.arange(num_episodes))
-        for i in bar:
-            encoded, envstr, agent_count, team_count, serialized_agents = self.iter()
-            frames.append(encoded)
-            framestr.append(envstr)
-            agents.append(serialized_agents)
-            agent_counts.append(agent_count)
-            team_counts.append(team_count)
-            bar.set_description("Episode: {} with agent count {}".format(i,agent_count))
+        num_episode_bar = tqdm.tqdm(np.arange(self.num_episodes))
+        for i in num_episode_bar:
+            self.initialize()
+            episode_bar = tqdm.tqdm(np.arange(self.episode_length))
+            for j in episode_bar:
+                encoded, envstr, agent_count, team_count, serialized_agents = self.iter()
+                frames.append(encoded)
+                framestr.append(envstr)
+                agents.append(serialized_agents)
+                agent_counts.append(agent_count)
+                team_counts.append(team_count)
+                episode_bar.set_description("Episode {} - Step {}: with agent count {}".format(i,j,agent_count))
         # if pyg:
         #     playGrid(frames)
         # else:
@@ -74,8 +79,8 @@ class Game():
 
     def serializeAgents(self):
         serialized = {}
-        for agentId in self.live_agents.keys():
-            agent = self.live_agents[agentId]
+        for agentId in self.agent_dict.keys():
+            agent = self.agent_dict[agentId]
             serialized[agentId] = agent.serialize()
         return serialized
 

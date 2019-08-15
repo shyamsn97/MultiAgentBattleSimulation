@@ -4,7 +4,8 @@ import random
 from node import Node
 from Board import Board
 class Env():
-	def __init__(self,size,viewrange,num_teams):
+	def __init__(self,size,num_teams):
+		self.size = size
 		self.board = Board(size)
 		self.num_teams = num_teams
 
@@ -13,13 +14,19 @@ class Env():
 		return self.board
 	
 	#processing
-	def initialize(self,live_agents):
-		l = list(live_agents.keys())
+	def flushAgents(self,agent_dict):
+		for agent in agent_dict:
+			agent_dict[agent].flush()
+
+	def initialize(self,agent_dict):
+		self.flushAgents(agent_dict)
+		self.board = Board(self.size)
+		l = list(agent_dict.keys())
 		random.shuffle(l)
 		size = self.board.size
 		c = 0
 		while c < len(l):
-			agent = live_agents[l[c]]
+			agent = agent_dict[l[c]]
 			team = agent.getTeam()
 			coord = (np.random.choice(size),int(np.random.uniform((team)*((size)//self.num_teams),
 																(team+1)*(size//self.num_teams))))

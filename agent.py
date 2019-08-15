@@ -8,6 +8,7 @@ class Agent():
         self.agentId = agentId
         self.position = None
         self.estimator = TorchEstimator(viewrange,moverange,attackrange)
+        self.max_life = max_life
         self.life = max_life
         self.reward = 0
         self.alive = True
@@ -66,6 +67,12 @@ class Agent():
         self.attackrange = r
 
     #processers
+    def flush(self):
+        self.position = None
+        self.life = self.max_life
+        self.reward = 0
+        self.alive = True
+
     def deliverDamage(self,damage,target_agent):
         self.reward += damage
         alive = target_agent.processDamage(damage)

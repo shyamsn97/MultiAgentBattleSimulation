@@ -14,9 +14,8 @@ parser.add_argument("--grid_size", type = int, default = 100, help = "grid size 
 parser.add_argument("--num_agents", type = int, default = 200, help = "number of agents in each team")
 parser.add_argument("--num_teams", type = int, default = 2, help = "number of teams")
 parser.add_argument("--num_episodes", type = int, default = 20, help = "number of episodes")
+parser.add_argument("--episode_length", type = int, default = 100, help = "length of each episode")
 
 args = parser.parse_args()
 
-start_server(port = args.port, grid_size = args.grid_size, 
-                num_agents = args.num_agents, num_teams = args.num_teams,
-                num_episodes = args.num_episodes)
+start_server(args)
