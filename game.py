@@ -2,7 +2,7 @@ import numpy as np
 import tqdm
 import random
 
-from env import Env
+from Env import Env
 from agent import Agent
 from tools import *
 
@@ -16,6 +16,9 @@ class Game():
         self.num_teams = num_teams
         self.num_episodes = num_episodes
         self.episode_length = episode_length
+        self.living_reward = 1
+        self.death_reward = -100
+        self.kill_reward = 50
         if configs == None:
             self.createAgents()
 
@@ -41,15 +44,16 @@ class Game():
     def initialize(self):
         self.env.initialize(self.agent_dict)
 
-    def iter(self):
+    def step(self):
         l = list(self.agent_dict.keys())
         random.shuffle(l) #shuffle agent order
         for agentId in l:
             agent = self.agent_dict[agentId]
             if agent.isAlive():
+                agent.update_history()
                 states, actions, coord_list = self.env.getStatesActions(agent)
-                action = agent.train_policy(states,actions)
-                self.env.step(agent,action,coord_list)
+                action, action_probs = agent.train_policy(states,actions)
+                reward = self.env.step(agent,action,coord_list)
         agent_count, team_count = self.env.countAgents(self.num_teams)
         return self.env.encode(), self.env.__str__(),agent_count, team_count, self.serializeAgents()
 
@@ -64,7 +68,7 @@ class Game():
             self.initialize()
             episode_bar = tqdm.tqdm(np.arange(self.episode_length))
             for j in episode_bar:
-                encoded, envstr, agent_count, team_count, serialized_agents = self.iter()
+                encoded, envstr, agent_count, team_count, serialized_agents = self.step()
                 frames.append(encoded)
                 framestr.append(envstr)
                 agents.append(serialized_agents)

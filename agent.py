@@ -1,6 +1,7 @@
 import numpy as np
 import random
 from models import TorchEstimator
+from Memory import Memory
 import torch
 
 class Agent():
@@ -18,7 +19,9 @@ class Agent():
         self.attackrange = attackrange
         self.moverange = moverange
         self.damage = 100
+        self.memory = Memory()
         self.create_model()
+
     #getters
     def getId(self):
         return self.agentId
@@ -67,6 +70,9 @@ class Agent():
         self.attackrange = r
 
     #processers
+    def decay_reward(self):
+        pass
+
     def flush(self):
         self.position = None
         self.life = self.max_life
@@ -90,9 +96,6 @@ class Agent():
 
     def updateLocation(self,coord):
         self.position = coord
-    # def update(self,coord,reward):
-    #     self.position = coord
-    #     self.reward += reward
 
     def create_model(self):
         self.policy = self.random_policy
@@ -100,8 +103,7 @@ class Agent():
     def generateActionSpace(self):
         return np.zeros((1 + self.moverange*2)**2 + (1 + self.actionrange*2)**2)
 
-    @staticmethod
-    def getValidProbabilites(values,actions):
+    def getValidProbabilites(self,values,actions):
         v = values*actions
         return v / np.sum(v,-1)
 
@@ -111,11 +113,13 @@ class Agent():
         probs = self.estimator(state)
         action_probs = probs.clone().detach().numpy().flatten()
         action_probs = self.getValidProbabilites(action_probs,actions)
-        return np.random.choice(action_probs.shape[0],p=action_probs)
+        return np.random.choice(action_probs.shape[0],p=action_probs), action_probs
         # move_range = (1+self.moverange*2)**2
         # acton_range = (1+self.attackrange*2)**2
-
         # return self.random_policy(probs.clone().detach().numpy())
+
+    def save(self,state,action,reward,probs):
+        self.mem.add(state,action,reward,probs)
 
     def move(self,action):
         self.position = action
