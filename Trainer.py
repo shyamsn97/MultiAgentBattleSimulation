@@ -1,14 +1,14 @@
 import numpy as np
-import pytorch
+import torch
+from tqdm import tqdm
 
-class Trainer():
+class Trainer:
 
-    def __init__(self,role="trainer"):
-        self.role = role
+    def __init__(self,name):
+        self.name = name
 
-
-    def train_rule(self,agent):
+    def train_rule(self,agent,**kwargs):
         pass
 
-    def train(self,agents):
-        pass
+    def train(self,epochs=50,**kwargs):
+        self.epoch_bar = tqdm(np.arange(epochs))

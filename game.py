@@ -1,14 +1,18 @@
 import numpy as np
 import tqdm
 import random
+import torch
 
 from Env import Env
 from agent import Agent
 from tools import *
+from models import TorchEstimator
+
+from ReinforceTrainer import ReinforceTorchTrainer
 
 class Game():
     def __init__(self,size,num_agents=1,max_life=100,viewrange=2,num_teams=2,
-                num_episodes=20,episode_length=200,configs=None):
+                num_episodes=20,episode_length=200,saved_model_path=None,train=True,configs=None):
         self.size = size
         self.env = Env(size,num_teams)
         self.agent_configs = {"num_agents":num_agents,"max_life":max_life,"viewrange":viewrange}
@@ -19,8 +23,9 @@ class Game():
         self.living_reward = 1
         self.death_reward = -100
         self.kill_reward = 50
-        if configs == None:
-            self.createAgents()
+        self.saved_model_path = saved_model_path
+        self.train = train
+        self.createAgents()
 
     #getters
     def getNumTeams(self):
@@ -33,12 +38,17 @@ class Game():
         num_agents = self.agent_configs["num_agents"]
         max_life = self.agent_configs["max_life"]
         viewrange = self.agent_configs["viewrange"]
+        attackrange = 1
+        moverange = 2
+        self.estimator = TorchEstimator(viewrange,moverange,attackrange)
+        if self.saved_model_path:
+            self.estimator.load_state_dict(torch.load(self.saved_model_path))
         for team in range(self.num_teams):
             c = 0
             while c < num_agents:
                 agentId = "T{}Agent{}".format(team,c)
                 c += 1
-                agent = Agent(agentId,max_life,team,viewrange=viewrange)
+                agent = Agent(agentId,max_life,team,viewrange=viewrange,estimator=self.estimator)
                 self.agent_dict[agentId] = agent
 
     def initialize(self):
@@ -50,10 +60,7 @@ class Game():
         for agentId in l:
             agent = self.agent_dict[agentId]
             if agent.isAlive():
-                agent.update_history()
-                states, actions, coord_list = self.env.getStatesActions(agent)
-                action, action_probs = agent.train_policy(states,actions)
-                reward = self.env.step(agent,action,coord_list)
+                self.env.step(agent)
         agent_count, team_count = self.env.countAgents(self.num_teams)
         return self.env.encode(), self.env.__str__(),agent_count, team_count, self.serializeAgents()
 
@@ -64,6 +71,7 @@ class Game():
         agents = [self.serializeAgents()]
         team_counts = [[self.agent_configs["num_agents"]]*self.num_teams]
         num_episode_bar = tqdm.tqdm(np.arange(self.num_episodes))
+        trainer = ReinforceTorchTrainer(self.estimator)
         for i in num_episode_bar:
             self.initialize()
             episode_bar = tqdm.tqdm(np.arange(self.episode_length))
@@ -75,6 +83,12 @@ class Game():
                 agent_counts.append(agent_count)
                 team_counts.append(team_count)
                 episode_bar.set_description("Episode {} - Step {}: with agent count {}".format(i,j,agent_count))
+            if self.train == True:
+                trainer.train(self.agent_dict)
+        if self.train == True:
+            torch.save(self.estimator.state_dict(),"saved_models/test_model.pth")
+        self.env.flushAgents(self.agent_dict)
+
         # if pyg:
         #     playGrid(frames)
         # else:

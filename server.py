@@ -65,9 +65,10 @@ def make_app(game):
 
 
 def start_server(args):
+    print("TRAIN",args.train_model)
     game = Game(size = args.grid_size, 
                 num_agents = args.num_agents, num_teams = args.num_teams,
-                num_episodes = args.num_episodes, episode_length = args.episode_length)
+                num_episodes = args.num_episodes, episode_length = args.episode_length, saved_model_path=args.saved_model_path,train=args.train_model)
     port = args.port
     try:
         app = make_app(game)

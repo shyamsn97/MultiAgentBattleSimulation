@@ -35,14 +35,16 @@ class Env():
 				self.board.place(coord,agent)
 				c += 1
 
-	def step(self,agent,action,coord_list):
+	def step(self,agent):
+		states, valid_actions, coord_list = self.getStatesActions(agent)
+		action, action_probs = agent.train_policy(states,valid_actions)
 		coord_action = coord_list[action]
+		reward = 0
 		if coord_action[0] == "move":
-			self.board.move(coord_action[1],agent)
+			reward = self.board.move(coord_action[1],agent)
 		elif coord_action[0] == "attack":
-			self.board.attack(coord_action[1],agent)
-		elif coord_action[0] == "pass":
-			pass
+			reward = self.board.attack(coord_action[1],agent)
+		agent.memorize(states,action,valid_actions,reward,action_probs)
 
 	def countAgents(self,num_teams):
 		c, teamCount = self.board.countAgents(num_teams)
