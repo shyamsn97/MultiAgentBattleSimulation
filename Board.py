@@ -20,18 +20,22 @@ class Board():
 			self.remove(originalPosition)
 		self.board[coord[0]][coord[1]].occupy(agent)
 		agent.updateLocation(coord)
+		return agent.getLivingReward()
 
 	def move(self,newcoord,agent):
 		originalPosition = agent.getPosition()
 		self.remove(originalPosition)
-		self.place(newcoord,agent)
+		return self.place(newcoord,agent)
 
 	def attack(self,coord,agent):
 		damage = agent.getDamage()
 		attacked_node = self.getCell(coord)
 		attacked_agent = attacked_node.getAgent()
-		if agent.deliverDamage(damage,attacked_agent) == False:
+		reward, dead =  agent.deliverDamage(damage,attacked_agent)
+		if dead == False:
 			attacked_node.remove()
+		return reward
+
 
 	def getCell(self,coord):
 		r = coord[0]
@@ -112,14 +116,14 @@ class Board():
 		if flatten:
 			moves = moves.flatten()
 			actions = actions.flatten()
-		new_actions = np.concatenate((moves,actions))
-		return np.concatenate((moves,actions)), coord_list
+		valid_actions = np.concatenate((moves,actions))
+		return valid_actions, coord_list
 
 	#state and actions
 	def getStatesActions(self,agent):
 		states = self.getState(agent)
-		moves, coord_list = self.getActions(agent)
-		return states, moves, coord_list
+		valid_actions, coord_list = self.getActions(agent)
+		return states, valid_actions, coord_list
 
 
 	#encoding 

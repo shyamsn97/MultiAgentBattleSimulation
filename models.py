@@ -27,6 +27,5 @@ class TorchEstimator(torch.nn.Module):
         x = self.linear(x)
         x = self.linear2(x)
         x = self.linear3(x)
-        # print(x.size())
         x = self.softmax(x)
         return x

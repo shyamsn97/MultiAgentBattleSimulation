@@ -1,13 +1,16 @@
 import numpy as np
 import random
 from models import TorchEstimator
+from Memory import Memory
 import torch
 
 class Agent():
-    def __init__(self,agentId,max_life,team,identity=0,viewrange=2,attackrange=1,moverange=2):
+    def __init__(self,agentId,max_life,team,identity=0,viewrange=2,attackrange=1,moverange=2,estimator=None):
         self.agentId = agentId
         self.position = None
-        self.estimator = TorchEstimator(viewrange,moverange,attackrange)
+        self.estimator = estimator
+        if estimator == None:
+            self.estimator = TorchEstimator(viewrange,moverange,attackrange)
         self.max_life = max_life
         self.life = max_life
         self.reward = 0
@@ -18,8 +21,17 @@ class Agent():
         self.attackrange = attackrange
         self.moverange = moverange
         self.damage = 100
+        self.memory = Memory()
+        self.living_reward = 1
         self.create_model()
+
     #getters
+    def getMem(self):
+        return self.memory
+
+    def getLivingReward(self):
+        return self.living_reward
+
     def getId(self):
         return self.agentId
 
@@ -57,6 +69,9 @@ class Agent():
         return self.damage
 
     #setters
+    def setEstimator(self,estimator):
+        self.estimator = estimator
+
     def setPosition(self,coord):
         self.position = coord
 
@@ -67,6 +82,12 @@ class Agent():
         self.attackrange = r
 
     #processers
+    def memorize(self,state,action,valid_actions,reward,action_probs=None):
+        self.memory.add(state,action,valid_actions,reward,action_probs)
+
+    def decay_reward(self):
+        pass
+
     def flush(self):
         self.position = None
         self.life = self.max_life
@@ -75,24 +96,21 @@ class Agent():
 
     def deliverDamage(self,damage,target_agent):
         self.reward += damage
-        alive = target_agent.processDamage(damage)
-        if alive == False:
-            self.reward += 50
-        return alive
+        out_reward, alive = target_agent.processDamage(damage)
+        return out_reward, alive
 
     def processDamage(self,damage):
         self.life -= damage
         self.reward -= damage
+        out_reward = damage
         if self.life <= 0:
             self.alive = False
             self.reward -= 100
-        return self.alive
+            out_reward = 100
+        return out_reward, self.alive
 
     def updateLocation(self,coord):
         self.position = coord
-    # def update(self,coord,reward):
-    #     self.position = coord
-    #     self.reward += reward
 
     def create_model(self):
         self.policy = self.random_policy
@@ -100,22 +118,24 @@ class Agent():
     def generateActionSpace(self):
         return np.zeros((1 + self.moverange*2)**2 + (1 + self.actionrange*2)**2)
 
-    @staticmethod
-    def getValidProbabilites(values,actions):
+    def getValidProbabilites(self,values,actions):
         v = values*actions
         return v / np.sum(v,-1)
 
-    def train_policy(self,state,actions):
+    def act(self,state,valid_actions):
+        return self.train_policy(state,valid_actions)
+    
+    def train_policy(self,state,valid_actions):
         with torch.no_grad():
-            state = torch.tensor(state).float()
-        probs = self.estimator(state)
+            tens_state = torch.tensor(state).float()
+        probs = self.estimator(tens_state)
+        #print("PROBS",probs)
         action_probs = probs.clone().detach().numpy().flatten()
-        action_probs = self.getValidProbabilites(action_probs,actions)
-        return np.random.choice(action_probs.shape[0],p=action_probs)
-        # move_range = (1+self.moverange*2)**2
-        # acton_range = (1+self.attackrange*2)**2
+        action_probs = self.getValidProbabilites(action_probs,valid_actions)
+        return np.random.choice(action_probs.shape[0],p=action_probs), action_probs
 
-        # return self.random_policy(probs.clone().detach().numpy())
+    def save(self,state,action,reward,probs):
+        self.mem.add(state,action,reward,probs)
 
     def move(self,action):
         self.position = action

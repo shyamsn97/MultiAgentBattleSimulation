@@ -15,6 +15,9 @@ parser.add_argument("--num_agents", type = int, default = 200, help = "number of
 parser.add_argument("--num_teams", type = int, default = 2, help = "number of teams")
 parser.add_argument("--num_episodes", type = int, default = 20, help = "number of episodes")
 parser.add_argument("--episode_length", type = int, default = 100, help = "length of each episode")
+parser.add_argument("--saved_model_path", type = str, default = None, help = "path to pretrained neural network")
+parser.add_argument("--train_model", default = True, action='store_false', help = "train")
+
 
 args = parser.parse_args()
 
