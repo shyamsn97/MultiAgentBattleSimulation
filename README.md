@@ -36,6 +36,6 @@
 	
 	# Example with grid size 100, 200 agents on each team, 1 episode with length 100, and a pretrained neural network model. Agents use REINFORCE to train the model
 	python run_server.py 8888 --grid_size 100 --num_agents 200 --num_teams 2 --num_episodes 1 --episode_length 100 --saved_model_path src/saved_models/test_model.pth
-	# then go to localhose:888 to see the agents duke it out!
+	# then go to localhost:8888 to see the agents duke it out!
 
 ![](images/demo.png)
