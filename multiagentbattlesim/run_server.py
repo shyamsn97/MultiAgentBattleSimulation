@@ -5,7 +5,7 @@ from server import *
 
 parser = argparse.ArgumentParser(description =
                     ''' 
-                        Multi agent war simulation
+                        Multi agent battle simulation
                     ''')
 
 parser.add_argument("port", type = int, help = "enter a valid port for the server to listen to")
