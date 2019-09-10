@@ -38,4 +38,4 @@
 	python run_server.py 8888 --grid_size 100 --num_agents 200 --num_teams 2 --num_episodes 1 --episode_length 100 --saved_model_path src/saved_models/test_model.pth
 	# then go to localhose:888 to see the agents duke it out!
 
-	![](images/demo.png)
+![](images/demo.png)
