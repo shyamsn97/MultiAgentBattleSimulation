@@ -1,8 +1,8 @@
 import numpy as np
 import random
 
-from node import Node
-from Board import Board
+from .Node import Node
+from .Board import Board
 
 class Env():
 	def __init__(self,size,num_teams):

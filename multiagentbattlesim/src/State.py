@@ -1,5 +1,5 @@
 import numpy as np
-from node import Node
+from .Node import Node
 
 class State():
     def __init__(self,agent,board_size,flatten=True):

@@ -1,7 +1,7 @@
 import numpy as np
 
-from node import Node
-from State import State
+from .Node import Node
+from .State import State
 
 class Board():
 	def __init__(self,size):

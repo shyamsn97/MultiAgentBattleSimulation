@@ -1,27 +1,27 @@
 import numpy as np
 import torch
-from Trainer import Trainer
+from .Trainer import Trainer
 from tqdm import tqdm
 
 def getTorchProbs(probs,actions):
     with torch.no_grad():
-        actions = torch.tensor(actions + 1e-4).float()
+        actions = torch.tensor(actions + 1e-3).float()
     v = probs*actions
-    v = v / (v.sum(-1))
+    v = v / (v.sum(-1) + torch.tensor(1e-3))
     #print("VALID PROBS", v)
-    return v
+    return v + torch.tensor(1e-3)
 
 class ReinforceTorchTrainer(Trainer):
 
-    def __init__(self,estimator,epochs=50,learning_rate=0.0001):
+    def __init__(self,estimator,epochs=20,learning_rate=0.00001):
         super(ReinforceTorchTrainer, self).__init__(name="reinforce")
-        self.learning_rate = 0.0001
+        self.learning_rate = learning_rate
         self.model = {}
         self.model["estimator"] = estimator
         def loss(predictions,targets):
             return -1*torch.sum(torch.mul(torch.log(predictions),targets))
         self.model["loss"] = loss
-        self.model["optimizer"] = torch.optim.Adam(params=self.model["estimator"].parameters(),lr=self.learning_rate,weight_decay=0.1)
+        self.model["optimizer"] = torch.optim.Adam(params=self.model["estimator"].parameters(),lr=self.learning_rate)
     
     def loss(predictions,targets):
         return -1*torch.sum(torch.mul(torch.log(predictions),targets))
@@ -55,7 +55,7 @@ class ReinforceTorchTrainer(Trainer):
                     probs = getTorchProbs(probs, valid_actions)
                     loss = loss_fn(probs,target)
                     optimizer.zero_grad()
-                    loss.backward()  
+                    loss.backward()
                     optimizer.step()
                     agentLoss += loss.item()
                 temp_loss += (agentLoss / len(agent.memory))

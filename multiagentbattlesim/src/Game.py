@@ -3,12 +3,12 @@ import tqdm
 import random
 import torch
 
-from Env import Env
-from agent import Agent
-from tools import *
-from models import TorchEstimator
+from .Env import Env
+from .Agent import Agent
+from .tools import *
+from .Models import TorchEstimator
 
-from ReinforceTrainer import ReinforceTorchTrainer
+from .ReinforceTrainer import ReinforceTorchTrainer
 
 class Game():
     def __init__(self,size,num_agents=1,max_life=100,viewrange=2,num_teams=2,

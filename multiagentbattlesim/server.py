@@ -5,7 +5,7 @@ import tornado.websocket
 from tornado.options import define, options, parse_command_line
 import ast
 
-from game import Game
+from multiagentbattlesim.src import Game
 
 static_root = os.path.join(os.path.dirname(__file__), 'static')
 #port = 8000

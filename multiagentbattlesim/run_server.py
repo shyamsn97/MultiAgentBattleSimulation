@@ -1,7 +1,6 @@
 import argparse
 import numpy as np
 from server import *
-from game import Game
 
 
 parser = argparse.ArgumentParser(description =
@@ -16,7 +15,7 @@ parser.add_argument("--num_teams", type = int, default = 2, help = "number of te
 parser.add_argument("--num_episodes", type = int, default = 20, help = "number of episodes")
 parser.add_argument("--episode_length", type = int, default = 100, help = "length of each episode")
 parser.add_argument("--saved_model_path", type = str, default = None, help = "path to pretrained neural network")
-parser.add_argument("--train_model", default = True, action='store_false', help = "train")
+parser.add_argument("--train_model", default = False, action='store_true', help = "train")
 
 
 args = parser.parse_args()

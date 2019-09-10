@@ -1,7 +1,7 @@
 import numpy as np
 import random
-from models import TorchEstimator
-from Memory import Memory
+from .Models import TorchEstimator
+from .Memory import Memory
 import torch
 
 class Agent():
