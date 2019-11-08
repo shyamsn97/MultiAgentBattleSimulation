@@ -1,0 +1,3 @@
+include multiagentbattlesim/ui/static/*
+include multiagentbattlesim/ui/*.html
+

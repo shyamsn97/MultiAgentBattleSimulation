@@ -1,4 +1,4 @@
-    var ws = new WebSocket("ws://localhost:8888/websocket");
+    var ws = new WebSocket("ws://localhost:8000/websocket");
     var count = 0;
     var curr = 0;
     var scale = 1;

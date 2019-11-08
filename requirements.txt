@@ -2,3 +2,4 @@ numpy
 tornado
 torch
 argparse
+tqdm
