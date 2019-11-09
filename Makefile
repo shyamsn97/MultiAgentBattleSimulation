@@ -1,7 +1,6 @@
 lint:
 	isort -y
 	black .
-	# pep8ify .
 	flake8 .
 
 push:

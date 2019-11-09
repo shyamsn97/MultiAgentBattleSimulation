@@ -11,7 +11,7 @@ def animate(frames):
         sys.stdout.flush()
         time.sleep(0.1)
         c += 1
-    sys.stdout.write("\rDone!     ")
+    sys.stdout.write("\rDone!")
 
 
 def playGrid(frames):
